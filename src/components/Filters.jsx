@@ -9,6 +9,7 @@ export default function Filters({ onChange }) {
   const [sizeMin, setSizeMin] = useState('')
   const [sizeMax, setSizeMax] = useState('')
   const [status, setStatus] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const params = {
@@ -26,6 +27,24 @@ export default function Filters({ onChange }) {
     setSelectedExams(prev => prev.includes(exam) ? prev.filter(e => e!==exam) : [...prev, exam])
   }
 
+  const crawl = async () => {
+    if(!city) return alert('Enter a city to crawl')
+    setLoading(true)
+    try{
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/crawl`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ city, exams: selectedExams, limit: 20 })
+      })
+      const data = await res.json()
+      alert(`Crawled ${data.scanned} sources, added ${data.created} new coachings`)
+    }catch(e){
+      alert('Crawl failed')
+    }finally{
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="w-full bg-white/80 backdrop-blur rounded-xl p-4 shadow-sm border border-gray-100">
       <div className="flex flex-wrap gap-3 items-center">
@@ -39,6 +58,7 @@ export default function Filters({ onChange }) {
           <option value="disliked">Disliked</option>
           <option value="neutral">Neutral</option>
         </select>
+        <button onClick={crawl} disabled={loading} className={`px-4 py-2 rounded-md text-white ${loading? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}>{loading? 'Crawling...' : 'Crawl Internet'}</button>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {EXAMS.map(ex => (
